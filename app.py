@@ -1,19 +1,19 @@
 from flask import Flask, render_template, request, redirect, flash, session
 from surveys import satisfaction_survey
-#from flask_debugtoolbar import DebugToolbarExtension
+from flask_debugtoolbar import DebugToolbarExtension
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "secre233t"
-#app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
-#debug = DebugToolbarExtension(app)
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
+debug = DebugToolbarExtension(app)
 
-responses = []
+
 
 
 @app.route("/")
 def get_home_page():
-    """Returns HTML Home Page with the Survey and Instructions"""
-    responses.clear() 
+    """Returns HTML Home Page with the Survey and Instructions""" 
+    session.clear()
     return render_template("home_page.html", survey=satisfaction_survey)
 
 
@@ -21,6 +21,7 @@ def get_home_page():
 @app.route("/start", methods=['POST'])
 def get_survey():
     """Gets Survey Question"""
+    session['responses'] = []
     return redirect('questions/0')
 
 
@@ -28,9 +29,10 @@ def get_survey():
 @app.route('/questions/<int:numQues>')
 def get_question(numQues):
     """Display Dynamic HTML For Designated Survey Question"""
+    responses = session.get('responses')
 
     #ensure user stays on track
-    if (len(responses) == 0):   # if there is no answers, take them to the home page
+    if (responses is None):   # if there is no answers, take them to the home page
         return redirect('/')
 
     if (len(responses) != numQues):  
@@ -47,7 +49,9 @@ def get_question(numQues):
 def get_answer():
     """Handle the Survey question response"""
     ans = request.form['answer']
+    responses = session['responses']
     responses.append(ans)
+    session['responses'] = responses
     if (len(responses) == len(satisfaction_survey.questions)):  # if the length of answers = the amount of questions, they are done
         return redirect("/done")
     else:
